@@ -1,0 +1,37 @@
+---
+- name: Pull gluster image
+  docker_image:
+    name: "{{ gluster_image }}:{{ gluster_version }}"
+  async: 1000
+  poll: 0
+  register: image_pull
+- name: Create directories
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+  - /etc/glusterfs
+  - /var/lib/glusterd
+  - /var/log/glusterfs
+- name: Create unit file
+  template:
+    src: gluster-container.service.j2
+    dest: /etc/systemd/system/gluster-container.service
+    mode: 644
+    owner: root
+    group: root
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: yes
+- name: Check status of image pull
+  async_status:
+    jid: "{{ image_pull.ansible_job_id }}"
+  register: job_result
+  until: job_result.finished
+  retries: 30
+- name: Start gluster container
+  systemd:
+    name: gluster-container
+    state: restarted
+    enabled: true
+

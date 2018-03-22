@@ -1,0 +1,3 @@
+---
+gluster_image: gluster/gluster-centos
+gluster_version: latest
